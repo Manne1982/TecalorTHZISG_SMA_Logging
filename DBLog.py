@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     #Get the configparser object
     config_object = ConfigParser()
-    config_object.read('config.ini')
+    config_object.read(sys.argv[0][:-8]+'config.ini')
     for sect in config_object.sections():
         print('Section:', sect)
         for k,v in config_object.items(sect):
@@ -256,9 +256,7 @@ if __name__ == "__main__":
     SQL_Config = config_object["SQL_CONFIG"]
     General_Config = config_object["GENERAL_CONFIG"]
     Modbus_Config = config_object["MODBUS_CONFIG"]
-
     sleep(3)
-
     if (len(sys.argv)>1):
         if(sys.argv[1] == "r"):
             x = requests.post(General_Config["isgaddress"] + "reboot.php", data = myobj)
