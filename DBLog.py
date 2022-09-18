@@ -1,4 +1,6 @@
 from logging import exception
+from turtle import delay
+from xmlrpc.client import boolean
 import requests
 import time
 from bs4 import BeautifulSoup
@@ -10,6 +12,7 @@ import json
 from pathlib import Path
 import WPConfig
 import os
+from configparser import ConfigParser
 
 def DatenAbrufen(urlin, Liste, SuchZeichenEnde):
     # Url of website
@@ -234,7 +237,6 @@ if __name__ == "__main__":
     FehlerLogFile = ''
     StringSQLTabName = ["tabSolGenDev", "tabSolDayVal", "tabSolDCData", "tabSolACData"]
     StringSQLTabName2 = ["tabISGHeizenConfig", "tabISGWWLuftConfig", "tabISGRestConfig"]
-    ISGAddress = "http://192.168.178.5/"
     StringSQL1 = [] #Wechselrichter SQL-Anweisung
     StringSQL2 = [] #WP-Daten SQL-Anweisung
     StringVisualSpalten = [] #Variable zum Aufnehmen der Srrings für die Visuelle ausgabe am Raspi
@@ -242,9 +244,24 @@ if __name__ == "__main__":
     Anfangswert = 0
     AktuelleLText = ""
 
+    #Get the configparser object
+    config_object = ConfigParser()
+    config_object.read('/home/manfred/Dokumente/TecalorTHZISG_SMA_Logging/config.ini')
+    for sect in config_object.sections():
+        print('Section:', sect)
+        for k,v in config_object.items(sect):
+            print(' {} = {}'.format(k,v))
+        print()
+
+    SQL_Config = config_object["SQL_CONFIG"]
+    General_Config = config_object["GENERAL_CONFIG"]
+    Modbus_Config = config_object["MODBUS_CONFIG"]
+
+    sleep(3)
+
     if (len(sys.argv)>1):
         if(sys.argv[1] == "r"):
-            x = requests.post(ISGAddress + "reboot.php", data = myobj)
+            x = requests.post(General_Config["isgaddress"] + "reboot.php", data = myobj)
             print(x)
             print("Warte 180 s bis ISG neu gestartet wurde")
             WPPause = 3
@@ -260,33 +277,19 @@ if __name__ == "__main__":
                 print("Eingabewert nicht bekannt!")    
     
     try:
-        if (sys.argv[0][6:8] == "ma"): #Wenn das Skript auf dem PC läuft
-            DataLogFile = '/home/manfred/Data.log'
-            FehlerLogFile = '/home/manfred/Fehler.log'
-            DateiJSON.append("/home/manfred/Dokumente/Logging/data_file.json")
-            DateiJSON.append("/home/manfred/Dokumente/Logging/WP_Todo.json")
-            DateiJSON.append("/home/manfred/Dokumente/Logging/data_file_WP_column.json")
-            DateiJSON.append("/home/manfred/Dokumente/Logging/data_file_WP_table.json")
-            DateiJSON.append("/home/manfred/Dokumente/Logging/data_file_WP_config_sites.json")
-            DateiJSON.append("/home/manfred/Dokumente/Logging/data_file_WP_config_column.json")
-            db = mysql.connector.connect(host='192.168.63.102',
-                                 database='LoggingDB',
-                                 user='Username',
-                                 password='12345')
-        else:                          #Wenn das Skript auf dem Raspi läuft
-            DataLogFile = '/home/pi/share/Data.log'
-            FehlerLogFile = '/home/pi/share/Fehler.log'
-            DateiJSON.append("/home/pi/share/data_file.json")
-            DateiJSON.append("/home/pi/share/WP_Todo.json")
-            DateiJSON.append("/home/pi/share/data_file_WP_column.json")
-            DateiJSON.append("/home/pi/share/data_file_WP_table.json")
-            DateiJSON.append("/home/pi/share/data_file_WP_config_sites.json")
-            DateiJSON.append("/home/pi/share/data_file_WP_config_column.json")
-            db = mysql.connector.connect(user='Username',
-                                    password='12345',
-                                    host="localhost",
-                                    database='LoggingDB',
-                                    port=3306)
+        DataLogFile = General_Config["pydirectory"] + 'Data.log'
+        FehlerLogFile = General_Config["pydirectory"] + 'Fehler.log'
+        DateiJSON.append(General_Config["pydirectory"] + "data_file.json")
+        DateiJSON.append(General_Config["pydirectory"] + "WP_Todo.json")
+        DateiJSON.append(General_Config["pydirectory"] + "data_file_WP_column.json")
+        DateiJSON.append(General_Config["pydirectory"] + "data_file_WP_table.json")
+        DateiJSON.append(General_Config["pydirectory"] + "data_file_WP_config_sites.json")
+        DateiJSON.append(General_Config["pydirectory"] + "data_file_WP_config_column.json")
+        db = mysql.connector.connect(host=SQL_Config["host"],
+                             database=SQL_Config["database"],
+                             user=SQL_Config["user"],
+                             password=SQL_Config["password"],
+                             port=int(SQL_Config["port"]))
     
         db.autocommit = True
         curs=db.cursor()
@@ -330,8 +333,9 @@ if __name__ == "__main__":
 
     
     #Modbus-Verbindung aufbauen
-    c = ModbusClient(host="192.168.178.6", port=502, unit_id=3, auto_open=True)
+    c = ModbusClient(host=Modbus_Config["host"], port=int(Modbus_Config["port"]), unit_id=int(Modbus_Config["unit_id"]), auto_open=(Modbus_Config["auto_open"]=="True"))
     #Modbus-SQL-Anweisungen vorbereiten Anfang mit Tabellen- und Spaltennamen
+    
     x = 0
     tempString = "\n     ZeitID    | "
     for j in range(0, 4):
@@ -482,8 +486,8 @@ if __name__ == "__main__":
             #Ab hier Datenabruf von Wärmepumpe
             if(WPPause == 0):
                 try:
-                    DatenAbrufenZahl(ISGAddress + "?s=1,0", WPDaten_1, ' ')
-                    DatenAbrufenZahl(ISGAddress + "?s=1,1", WPDaten_2, ' ')
+                    DatenAbrufenZahl(General_Config["isgaddress"] + "?s=1,0", WPDaten_1, ' ')
+                    DatenAbrufenZahl(General_Config["isgaddress"] + "?s=1,1", WPDaten_2, ' ')
                     Counter = Counter +2
                 except Exception as e:
                     print ("Verbindungsproblem mit ISG: ", e)
@@ -577,7 +581,7 @@ if __name__ == "__main__":
 
                 #Abrufen der Status-Seite
                 try:
-                    DatenAbrufen(ISGAddress + "?s=2,0", WPDaten_1, '<')
+                    DatenAbrufen(General_Config["isgaddress"] + "?s=2,0", WPDaten_1, '<')
                     Counter = Counter +1
                 except Exception as e:
                     print ("Verbindungsproblem mit ISG: ", e)
@@ -642,7 +646,7 @@ if __name__ == "__main__":
                             TempSQLCommand.append(time.strftime("%Y%m%d000000", time.localtime()))
                         Statusbalken = "#"
                         for i in WPConfigSites:
-                            EinstellungenAbrufen(ISGAddress + i[1], WPConfigDaten, i[2])
+                            EinstellungenAbrufen(General_Config["isgaddress"] + i[1], WPConfigDaten, i[2])
                             print(Statusbalken)
                             Statusbalken += "#" 
                             Counter += 1
@@ -738,7 +742,7 @@ if __name__ == "__main__":
 
         
                 if (Counter >= 680):
-                    x = requests.post(ISGAddress + "reboot.php", data = myobj)
+                    x = requests.post(General_Config["isgaddress"] + "reboot.php", data = myobj)
                     print(x)
                     Counter = 0
                     WPPause=3
