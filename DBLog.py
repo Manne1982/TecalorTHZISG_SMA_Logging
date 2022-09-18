@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     #Get the configparser object
     config_object = ConfigParser()
-    config_object.read('/home/manfred/Dokumente/TecalorTHZISG_SMA_Logging/config.ini')
+    config_object.read('config.ini')
     for sect in config_object.sections():
         print('Section:', sect)
         for k,v in config_object.items(sect):
