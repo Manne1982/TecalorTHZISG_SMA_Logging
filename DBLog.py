@@ -173,16 +173,25 @@ def SQLEinstellungenAbrufen(curs, Config, TabName, ListOut):
 
 #Funktion für Solarwerte in reelle Zahlen zu konvertieren
 def ConvertRegisterValue(Data, CountRegister, factor, signed):
-    Temp = Data[0]
-    #Register zusammensetzen
-    for j in range(1, CountRegister):
-        Temp = (Temp<<16)+ Data[j]
-    #Wenn Signed, umwandlung in Minuswert
-    if((Temp&(1<<((CountRegister * 16)-1)))and(signed)):
-        Temp = Temp - 2**(CountRegister * 16)
-    #Wenn Faktor > 0 muss die Kommastelle korrigiert werden
-    if(factor):
-        Temp = Temp / (10**factor)
+    try:
+        Temp = Data[0]
+        #Register zusammensetzen
+        for j in range(1, CountRegister):
+            Temp = (Temp<<16)+ Data[j]
+        #Wenn Signed, umwandlung in Minuswert
+        if((Temp&(1<<((CountRegister * 16)-1)))and(signed)):
+            Temp = Temp - 2**(CountRegister * 16)
+        #Wenn Faktor > 0 muss die Kommastelle korrigiert werden
+        if(factor):
+            Temp = Temp / (10**factor)
+    except Exception as e:
+        print("Fehler beim Convertieren (PV-Daten)")
+        strExcept = " 101 Fehler beim Convertieren (PV-Daten)\n"
+        strExcept += str(e)
+        strExcept += "\nData: " + str(Data)
+        strExcept += "\nCountRegister: " + str(CountRegister) + "\n"
+        WPConfig.logData(strExcept, FehlerLogFile)
+
     return Temp
 #Datensatz bei 2dimensionaler Liste suchen Value-Spalte (Suchwertspalte) muss sortiert sein (Column ist die Spalte des Suchwerts)
 def DatasetSearch(Data, Value, Column):
@@ -471,13 +480,7 @@ if __name__ == "__main__":
                     strExcept = " 101 Fehler beim Datensatz Einfügen (Solardaten)\n"
                     strExcept += str(e)
                     WPConfig.logData(strExcept, FehlerLogFile)
-                    Fehler+=1
-                    if(Fehler < 5):
-                        WPPause = 2
-                        continue
-                    db.rollback()
-                    db.close()
-                    quit()
+
             else:
                 print("\n------------------------------------------------\n")
 
@@ -497,8 +500,11 @@ if __name__ == "__main__":
                     if(Fehler < 5):
                         WPPause = 2
                         continue
+                    else:
+                        WPPause = 300
+                        continue
+                    db.rollback()
                     db.close()
-                    print (str(Counter))
                     quit()
 
                 TempSQLCommand = []
@@ -533,6 +539,9 @@ if __name__ == "__main__":
                     Fehler+=1
                     if(Fehler < 5):
                         WPPause = 2
+                        continue
+                    else:
+                        WPPause = 300
                         continue
                     db.rollback()
                     db.close()
