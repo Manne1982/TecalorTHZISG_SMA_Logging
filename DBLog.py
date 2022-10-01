@@ -1,5 +1,6 @@
 from logging import exception
 from turtle import delay
+from types import NoneType
 from xmlrpc.client import boolean
 import requests
 import time
@@ -174,6 +175,8 @@ def SQLEinstellungenAbrufen(curs, Config, TabName, ListOut):
 #Funktion für Solarwerte in reelle Zahlen zu konvertieren
 def ConvertRegisterValue(Data, CountRegister, factor, signed):
     try:
+        if(Data == None):
+            return -999
         Temp = Data[0]
         #Register zusammensetzen
         for j in range(1, CountRegister):
@@ -186,7 +189,7 @@ def ConvertRegisterValue(Data, CountRegister, factor, signed):
             Temp = Temp / (10**factor)
     except Exception as e:
         print("Fehler beim Convertieren (PV-Daten)")
-        strExcept = " 101 Fehler beim Convertieren (PV-Daten)\n"
+        strExcept = " 110 Fehler beim Convertieren (PV-Daten)\n"
         strExcept += str(e)
         strExcept += "\nData: " + str(Data)
         strExcept += "\nCountRegister: " + str(CountRegister) + "\n"
@@ -391,7 +394,6 @@ if __name__ == "__main__":
             MinSperre = 0
         #Aufgaben die alle 10 Sekunden ausgeführt werden
         if(((Sekunde%10) < 4)and(Sek10Sperre == 0)):
-            Skip = 0
             Sek10Sperre = 1
             try:
                 SolRohDaten = c.read_holding_registers(RegisterData[45][0], RegisterData[45][1])#innentemperatur Gerät abfragen zum verifizieren, dass Wechselrichter arbeitet
@@ -399,6 +401,14 @@ if __name__ == "__main__":
                     for i in range(0, len(RegisterData)):
                         if(((RegisterData[i][4]!=0)and(RegisterData[i][4]!=2))or((RegisterData[i][4]==2) and TageswerteLesen)):#nicht in Gruppe 0 und nicht in Gruppe 2 auser wenn in Gruppe 2 dann mit Tageswert lesen
                             SolRohDaten = c.read_holding_registers(RegisterData[i][0], RegisterData[i][1])
+                            if(SolRohDaten == None): #Wenn keine Daten Empfangen, abbrechen
+                                SolDaten.clear()
+                                SolAktiv = 0
+                                CountDaten = 0
+                                break
+                            else:
+                                SolAktiv = 1
+
                         if(CountDaten > 0):
                             if(((RegisterData[i][4]!=0)and(RegisterData[i][4]!=2)and(RegisterData[i][6]))):#nicht in Gruppe 0 und nicht in Gruppe 2 und wenn Durchschnitt berechtnet wird
                                 SolDaten[i] += ConvertRegisterValue(SolRohDaten, RegisterData[i][1], RegisterData[i][2], RegisterData[i][3])
@@ -413,7 +423,7 @@ if __name__ == "__main__":
                             else:
                                 SolDaten.append(0)
                     CountDaten += 1
-                    SolAktiv = 1
+                    
                 else:
                     SolAktiv = 0
                     SolDaten.clear()
@@ -428,7 +438,6 @@ if __name__ == "__main__":
                 strExcept = " 100 Fehler beim Datensatz Erstellen (Solardaten)\n"
                 strExcept += str(e)
                 WPConfig.logData(strExcept, FehlerLogFile)
-                Fehler+=1
         #Aufgaben die Minütlich ausgeführt werden
         if((Sekunde < 20)and(MinSperre == 0)):
             MinSperre = 1
