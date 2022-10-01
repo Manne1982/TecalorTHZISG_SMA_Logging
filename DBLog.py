@@ -49,17 +49,17 @@ def DatenAbrufenZahl(urlin, Liste, SuchZeichenEnde):
     paragraphs = soup.find_all('td')
     Liste.clear()
     TempList = []
-    for i in range(0, len(paragraphs)):
-        TempList.append(str(paragraphs[i]).replace('</td>', ''))
+    for i in paragraphs:
+        TempList.append(str(i).replace('</td>', ''))
     
  #   print(TempList)
-    for i in range(0, len(TempList)):
-        Ende = TempList[i].find(SuchZeichenEnde, 17)
+    for i in TempList:
+        Ende = i.find(SuchZeichenEnde, 17)
         Temp = 0
         if (Ende < 0):
-            Temp = TempList[i][TempList[i].find(">")+1:].replace(",", ".")
+            Temp = i[i.find(">")+1:].replace(",", ".")
         else:
-            Temp = TempList[i][TempList[i].find(">")+1:Ende].replace(",", ".")
+            Temp = i[i.find(">")+1:Ende].replace(",", ".")
         try:
             Liste.append(float(Temp))
         except ValueError:
@@ -649,7 +649,7 @@ if __name__ == "__main__":
                 # SQL-Anweisung für die ISG-Einstellungen vorbereiten
                 # strSQLConfig = [] #Variable zum aufnehmen der aktuell letzten Daten in der SQL-DB
 
-                if(EinstellungWPPruefen and (int(time.strftime("%H", time.localtime())) >= 1) and (Counter < 660)):
+                if(EinstellungWPPruefen and (int(time.strftime("%H%M", time.localtime())) >= 130) and (Counter < 660)):
                     EinstellungWPPruefen = 0
                     WPConfigDaten = []
                     strCountConfig = 0
@@ -703,7 +703,7 @@ if __name__ == "__main__":
                                     Counter += 1
                                     print(TempTime)
                                     print(j[1])
-                                    WPConfig.logData("akt Zeit (h): " + str(TempTime) + " - WP Zeit (h)" + j[1], DataLogFile)
+                                    WPConfig.logData("akt Zeit (m): " + str(TempTime) + " - WP Zeit (m)" + j[1], DataLogFile)
                                 else:
                                     print(TempTime)
                                     print(j[1])
