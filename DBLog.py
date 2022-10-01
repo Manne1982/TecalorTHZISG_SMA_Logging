@@ -227,7 +227,7 @@ if __name__ == "__main__":
     MinSperre = 1
     Sek10Sperre = 1
     TageswerteLesen = 0
-    TageswertWPSchreiben = 0
+    TageswertWPSchreiben = 1
     EinstellungWPPruefen = 0
     EinstellungWPCounter = 0
     aktTag = int(time.strftime("%d", time.localtime()))
@@ -372,7 +372,8 @@ if __name__ == "__main__":
         StringSQL2.append("INSERT INTO " + WPTableData[j+1][1] + " (Zeit_id")
     for i in WPColumnData:
         #SQL-Daten vorbereiten
-        StringSQL2[i[1]-1] += ", " + i[0]
+        if(i[1]):
+            StringSQL2[i[1]-1] += ", " + i[0]
         #Anzeige vorbereiten was später auf dem Terminal steht
         if((len(i[0])+len(tempString))>95):
             StringVisualSpalten.append(tempString)
@@ -526,6 +527,8 @@ if __name__ == "__main__":
                             #für Tageswerte 000000 Uhrzeit als Zeitid eintragen
                             TempSQLCommand.append(list1 + time.strftime("%Y%m%d000000", time.localtime()))
                     for i in WPColumnData:
+                        if(i[1]==0):
+                            continue
                         #Terminal Anzeige erstellen
                         if((len(i[0])+len(tempString))>95):
                             print(StringVisualSpalten[x])
@@ -566,7 +569,7 @@ if __name__ == "__main__":
                         if(i < 5): 
                             #print(TempSQLCommand[i])
                             curs.execute(list1 + ");")
-                        if((i ==7)and(TageswertWPSchreiben)): # Die Stunden werden ab dem 26.12.2021 nur noch einmal Täglich geschrieben
+                        if((i ==7)and(TageswertWPSchreiben)): # Die Stunden werden ab dem 26.12.2021 nur noch einmal Täglich geschrieben                            
                             curs.execute(list1 + ");")
                             TageswertWPSchreiben = 0
                         if(((i == 6)or(i==5))and(int(time.strftime("%M", time.localtime()))%10 == 0 )):
