@@ -1,6 +1,6 @@
 from logging import exception
 from turtle import delay
-from types import NoneType
+#from types import NoneType
 from xmlrpc.client import boolean
 import requests
 import time
@@ -258,7 +258,7 @@ if __name__ == "__main__":
 
     #Get the configparser object
     config_object = ConfigParser()
-    config_object.read(sys.argv[0][:-8]+'config.ini')
+    config_object.read(sys.argv[0][:-8]+'config_PC.ini')
     for sect in config_object.sections():
         print('Section:', sect)
         for k,v in config_object.items(sect):
@@ -348,20 +348,20 @@ if __name__ == "__main__":
     
     x = 0
     tempString = "\n     ZeitID    | "
-    for j in range(0, 4):
-        StringSQL1.append("INSERT INTO " + StringSQLTabName[j] + " (Zeit_id")
-        for i in range(0, len(RegisterData)):
+    for list1, j in zip(StringSQLTabName, range(0, 4)):
+        StringSQL1.append("INSERT INTO " + list1 + " (Zeit_id")
+        for i in RegisterData:
             #SQL-Daten vorbereiten
-            if(RegisterData[i][4]==j+1):
-                StringSQL1[j] += ", " + RegisterData[i][5]
+            if(i[4]==j+1):
+                StringSQL1[j] += ", " + i[5]
             #Anzeige vorbereiten was später auf dem Terminal steht
-            if((RegisterData[i][4]!=0)and(RegisterData[i][4]!=2)and(RegisterData[i][7])and(j == 0)):
-                if((len(RegisterData[i][5])+len(tempString))>95):
+            if((i[4]!=0)and(i[4]!=2)and(i[7])and(j == 0)):
+                if((len(i[5])+len(tempString))>95):
                     StringVisualSpalten.append(tempString)
-                    tempString = RegisterData[i][5] + " | "
+                    tempString = i[5] + " | "
                     x +=1
                 else:
-                    tempString += RegisterData[i][5] + " | "
+                    tempString += i[5] + " | "
             
                             
         StringSQL1[j] += ") VALUES ("
@@ -370,21 +370,20 @@ if __name__ == "__main__":
     tempString = ""
     for j in range(0, 8):
         StringSQL2.append("INSERT INTO " + WPTableData[j+1][1] + " (Zeit_id")
-    for i in range(1, len(WPColumnData)):
+    for i in WPColumnData:
         #SQL-Daten vorbereiten
-        StringSQL2[WPColumnData[i][1]-1] += ", " + WPColumnData[i][0]
+        StringSQL2[i[1]-1] += ", " + i[0]
         #Anzeige vorbereiten was später auf dem Terminal steht
-        if((len(WPColumnData[i][0])+len(tempString))>95):
+        if((len(i[0])+len(tempString))>95):
             StringVisualSpalten.append(tempString)
-            tempString = WPColumnData[i][0] + " | "
+            tempString = i[0] + " | "
             x +=1
         else:
-            tempString += WPColumnData[i][0] + " | "
+            tempString += i[0] + " | "
     StringVisualSpalten.append(tempString)
     #Mittelteil der WP-SQL-Anweisung nach Spaltenname anhängen       
     for j in range(0, 8):                            
         StringSQL2[j] += ") VALUES ("
-
     while(1):
         Sekunde = int(time.strftime("%S", time.localtime()))
         
@@ -520,24 +519,26 @@ if __name__ == "__main__":
                 x = 3
                 tempString = ""
                 try:
-                    for i in range(0, 7):
-                        TempSQLCommand.append(StringSQL2[i] + time.strftime("%Y%m%d%H%M00", time.localtime()))
-                    #für Tageswerte 000000 Uhrzeit als Zeitid eintragen
-                    TempSQLCommand.append(StringSQL2[7] + time.strftime("%Y%m%d000000", time.localtime()))
-                    for i in range(1, len(WPColumnData)):
+                    for list1, i in zip(StringSQL2, range(0, 8)):
+                        if(i != 7):
+                            TempSQLCommand.append(list1 + time.strftime("%Y%m%d%H%M00", time.localtime()))
+                        else:
+                            #für Tageswerte 000000 Uhrzeit als Zeitid eintragen
+                            TempSQLCommand.append(list1 + time.strftime("%Y%m%d000000", time.localtime()))
+                    for i in WPColumnData:
                         #Terminal Anzeige erstellen
-                        if((len(WPColumnData[i][0])+len(tempString))>95):
+                        if((len(i[0])+len(tempString))>95):
                             print(StringVisualSpalten[x])
                             print(tempString)
                             tempString = ""
                             x +=1
-                        var = "{:^"+ str(len(WPColumnData[i][0])) +"} | "
-                        if (WPColumnData[i][1] < 5):
-                            TempSQLCommand[WPColumnData[i][1]-1]+= ", " + str(WPDaten_1[WPColumnData[i][2]])
-                            tempString += var.format(round((WPDaten_1[WPColumnData[i][2]]), 2))
+                        var = "{:^"+ str(len(i[0])) +"} | "
+                        if (i[1] < 5):
+                            TempSQLCommand[i[1]-1]+= ", " + str(WPDaten_1[i[2]])
+                            tempString += var.format(round((WPDaten_1[i[2]]), 2))
                         else:
-                            TempSQLCommand[WPColumnData[i][1]-1]+= ", " + str(WPDaten_2[WPColumnData[i][2]])
-                            tempString += var.format(round((WPDaten_2[WPColumnData[i][2]]), 2))
+                            TempSQLCommand[i[1]-1]+= ", " + str(WPDaten_2[i[2]])
+                            tempString += var.format(round((WPDaten_2[i[2]]), 2))
                 except Exception as e:
                     print("SQL-DB-Error. Rolling back.")
                     print("Fehler beim vorbereiten des SQL-Befehls")
@@ -561,16 +562,15 @@ if __name__ == "__main__":
                     if((WPDaten_1[WPColumnData[1][2]]==0)or(WPDaten_1[WPColumnData[4][2]]==0)or(WPDaten_1[WPColumnData[8][2]]==0)or(WPDaten_2[WPColumnData[22][2]]==0)or(WPDaten_2[WPColumnData[22][2]]==0)):
                         raise
                     
-                    for i in range(0, 8):
-                        TempSQLCommand[i]+=");"
+                    for list1, i in zip(TempSQLCommand, range(0, 8)):
                         if(i < 5): 
                             #print(TempSQLCommand[i])
-                            curs.execute(TempSQLCommand[i])
+                            curs.execute(list1 + ");")
                         if((i ==7)and(TageswertWPSchreiben)): # Die Stunden werden ab dem 26.12.2021 nur noch einmal Täglich geschrieben
-                            curs.execute(TempSQLCommand[i])
+                            curs.execute(list1 + ");")
                             TageswertWPSchreiben = 0
                         if(((i == 6)or(i==5))and(int(time.strftime("%M", time.localtime()))%10 == 0 )):
-                            curs.execute(TempSQLCommand[i])
+                            curs.execute(list1 + ");")
                 except Exception as e:
                     print("SQL-DB-Error. Rolling back.")
                     print("Fehler beim Datensatz Einfügen oder Daten entsprechen nicht der Vorgabe")
@@ -657,8 +657,8 @@ if __name__ == "__main__":
                     TempSQLCommand = [] #WP-Einstellungen SQL-Anweisung hinterer Teil mit den Werten
                     Unterschiede = 0
                     try:
-                        for i in range(0,  3):
-                            StringSQL3.append("INSERT INTO " + StringSQLTabName2[i] + " (Zeit_id")
+                        for i in StringSQLTabName2:
+                            StringSQL3.append("INSERT INTO " + i + " (Zeit_id")
                             TempSQLCommand.append(time.strftime("%Y%m%d000000", time.localtime()))
                         Statusbalken = "#"
                         for i in WPConfigSites:
@@ -730,10 +730,14 @@ if __name__ == "__main__":
                         WPConfig.logData(strExcept, FehlerLogFile)
                     try:
                         if(Unterschiede):
-                            for i in range(0,  3):
-                                StringSQL3[i] += ") VALUES ("
-                                print(StringSQL3[i] + TempSQLCommand[i] + ");")
-                                curs.execute(StringSQL3[i] + TempSQLCommand[i] + ");")
+                            for i, j in zip(StringSQL3, TempSQLCommand):
+                                i += ") VALUES ("
+                                print(i + j + ");")
+                                curs.execute(i + j + ");")
+#                            for i in range(0,  3):
+#                                StringSQL3[i] += ") VALUES ("
+#                                print(StringSQL3[i] + TempSQLCommand[i] + ");")
+#                                curs.execute(StringSQL3[i] + TempSQLCommand[i] + ");")
                             #Letzten Daten von SQL-DB abrufen
                             SQLEinstellungenAbrufen(curs, WPConfigColumn, StringSQLTabName2, strSQLConfig)
                         EinstellungWPCounter += 1
