@@ -227,7 +227,7 @@ if __name__ == "__main__":
     MinSperre = 1
     Sek10Sperre = 1
     TageswerteLesen = 0
-    TageswertWPSchreiben = 1
+    TageswertWPSchreiben = 0
     EinstellungWPPruefen = 0
     EinstellungWPCounter = 0
     aktTag = int(time.strftime("%d", time.localtime()))
@@ -258,7 +258,7 @@ if __name__ == "__main__":
 
     #Get the configparser object
     config_object = ConfigParser()
-    config_object.read(sys.argv[0][:-8]+'config_PC.ini')
+    config_object.read(sys.argv[0][:-8]+'config.ini')
     for sect in config_object.sections():
         print('Section:', sect)
         for k,v in config_object.items(sect):
