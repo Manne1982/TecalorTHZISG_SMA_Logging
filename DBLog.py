@@ -232,6 +232,7 @@ if __name__ == "__main__":
     EinstellungWPCounter = 0
     aktTag = int(time.strftime("%d", time.localtime()))
     SolAktiv = 1
+    SolPause = 0
     CountDaten = 0
     WPPause = 0
     strListStatus = []
@@ -435,7 +436,9 @@ if __name__ == "__main__":
                         CountDaten = 0
             except Exception as e:
                 print("Fehler beim Datensatz Erstellen für (PV-Daten)")
-                strExcept = " 100 Fehler beim Datensatz Erstellen (Solardaten)\n"
+                print(SolDaten)
+                strExcept = " 100 Fehler beim Datensatz Erstellen (Solardaten)\n" + "Fehlerindex = "
+                strExcept += "Index i = " + str(i) + "SolDaten = " + str(SolDaten) + "\nRohdaten = " + str(SolRohDaten)
                 strExcept += str(e)
                 WPConfig.logData(strExcept, FehlerLogFile)
         #Aufgaben die Minütlich ausgeführt werden
@@ -450,23 +453,23 @@ if __name__ == "__main__":
                     TempSQLCommand.append(StringSQL1[i] + time.strftime("%Y%m%d%H%M00", time.localtime()))
                 #für Tageswerte 000000 Uhrzeit als Zeitid eintragen
                 TempSQLCommand[1] = StringSQL1[1] + time.strftime("%Y%m%d000000", time.localtime())
-                    
-                for i in range(0, len(RegisterData)):
-                    varTeiler = 1
-                    if(RegisterData[i][4]==0): #Bei Gruppe 0 soll die Schleife übersprungen werden
-                        continue
-                    if(RegisterData[i][6]):
-                        varTeiler *= CountDaten
-                    TempSQLCommand[(RegisterData[i][4])-1]+= ", " + str(SolDaten[i]/varTeiler)
-                    #Terminal Anzeige erstellen
-                    if(RegisterData[i][7]):
-                        if((len(RegisterData[i][5])+len(tempString))>95):
-                            print(StringVisualSpalten[x])
-                            print(tempString)
-                            tempString = ""
-                            x +=1
-                        var = "{:^"+ str(len(RegisterData[i][5])) +"} | "
-                        tempString += var.format(round((SolDaten[i]/varTeiler), 2))
+                if(len(RegisterData) <= len(SolDaten)):    
+                    for Reg, Sol in zip(RegisterData, SolDaten): # range(0, len(RegisterData)):
+                        varTeiler = 1
+                        if(Reg[4]==0): #Bei Gruppe 0 soll die Schleife übersprungen werden
+                            continue
+                        if(Reg[6]):
+                            varTeiler *= CountDaten
+                        TempSQLCommand[(Reg[4])-1]+= ", " + str(Sol/varTeiler)
+                        #Terminal Anzeige erstellen
+                        if(Reg[7]):
+                            if((len(Reg[5])+len(tempString))>95):
+                                print(StringVisualSpalten[x])
+                                print(tempString)
+                                tempString = ""
+                                x +=1
+                            var = "{:^"+ str(len(Reg[5])) +"} | "
+                            tempString += var.format(round((Sol/varTeiler), 2))
                 print(StringVisualSpalten[x])
                 print(tempString)
                 SolDaten.clear()
