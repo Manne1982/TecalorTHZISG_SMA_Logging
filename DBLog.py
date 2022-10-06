@@ -373,8 +373,9 @@ if __name__ == "__main__":
         StringSQL2.append("INSERT INTO " + WPTableData[j+1][1] + " (Zeit_id")
     for i in WPColumnData:
         #SQL-Daten vorbereiten
-        if(i[1]):
-            StringSQL2[i[1]-1] += ", " + i[0]
+        if(i[1]==0):
+            continue
+        StringSQL2[i[1]-1] += ", " + i[0]
         #Anzeige vorbereiten was später auf dem Terminal steht
         if((len(i[0])+len(tempString))>95):
             StringVisualSpalten.append(tempString)
